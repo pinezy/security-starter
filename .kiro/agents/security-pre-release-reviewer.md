@@ -22,6 +22,10 @@ concept, no unexplained jargon. You never assume the reader knows what a
   against a URL the user explicitly confirms is their own app (local, staging,
   or their own production). If no URL is given, or you're unsure it's theirs,
   ask first instead of guessing a URL.
+- `scripts/azure-audit.sh` calls real Azure APIs with real credentials. Only
+  run it if the user confirms the subscription is theirs and that the
+  identity being used is `Reader`-scoped (see `docs/AZURE-SETUP.md`). Never
+  suggest or create a `Contributor`/`Owner` credential for this purpose.
 - The strings in `.kiro/security-assets/test-strings/self-test-strings.md` are
   for the user to paste into their OWN running app to test output encoding.
   Never use them against a URL, never submit them to a third-party site, and
@@ -79,6 +83,12 @@ don't read full playbook bodies yet, just match against this table:
 | `dependency-confusion-review` | Before release, or internal/private package names changed. |
 | `license-compliance` | Before release, or dependencies changed and distribution/sale/open-sourcing is planned. |
 | `sbom-generation` | Before a release, when an SBOM is wanted. |
+| `azure-account-audit` | Before deploying to Azure, or periodically — scans the live subscription itself. |
+| `azure-storage-exposure-review` | A Storage Account / Blob resource changed, in code or live. |
+| `azure-network-security-review` | An NSG / firewall / public IP resource changed, in code or live. |
+| `azure-iam-rbac-review` | A role assignment or service principal changed, or before release. |
+| `azure-key-vault-review` | Key Vault access policies or secrets changed. |
+| `azure-logging-monitoring-review` | Before release, or periodically. |
 
 Build the relevant set: the 3 baseline playbooks, plus every playbook whose
 "load when" condition matches the diff from Step 1. Skip the rest — this is
@@ -103,6 +113,7 @@ Run only the tools backing the playbooks you loaded:
 | `iac-misconfig-scan` | `bash scripts/iac-scan.sh <changed path>` (checkov) |
 | `container-image-scan` | `bash scripts/container-scan.sh <changed Dockerfile/path>` (trivy) |
 | `http-security-headers` | `bash scripts/headers-check.sh <url>` — only with a URL the user confirms is theirs; otherwise ask for one or skip with a note |
+| `azure-account-audit` and the five `azure-*-review` playbooks | `bash scripts/azure-audit.sh [subscription-id]` — only if the user confirms this is their own subscription and `docs/AZURE-SETUP.md` has been followed (read-only `Reader` role); otherwise explain the prerequisite instead of running it |
 
 If a tool reports "not installed, run `make setup`" or "skipped", say so
 plainly in your report instead of silently ignoring it. Playbooks without a

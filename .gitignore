@@ -9,6 +9,7 @@ node_modules/
 
 # Scan output
 semgrep.sarif
+.security-reports/
 
 # Local secrets: never commit these
 .env

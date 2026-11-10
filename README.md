@@ -10,6 +10,7 @@ A reusable starter that adds automated security checks to any repo.
 | Infra misconfig | checkov | on demand (`make iac-scan`) |
 | Container image | trivy | on demand (`make container-scan`) |
 | HTTP headers | curl-based checker | on demand (`make headers-check`) |
+| Azure subscription (live) | Prowler, read-only | on demand (`make azure-audit`) |
 | Demo still works | `demo-test` job | CI |
 
 ## Quick start
@@ -43,14 +44,16 @@ changes before you commit, submit, or deploy — useful for hackathons and
 releases, not just day-to-day commits. It's built in three tiers so it stays
 cheap to run:
 
-1. **Manifests** (`.kiro/steering/security/*.md`, 19 files): each is a short
+1. **Manifests** (`.kiro/steering/security/*.md`, 25 files): each is a short
    `name` + one-sentence `description` of a check — secret scanning, auth
    review, file uploads, CORS, SSRF, IaC misconfig, and more. These are
    always visible to the agent but don't cost much context.
 2. **Playbooks**: the full body of whichever manifest(s) turn out to be
    relevant to what changed. Loaded on demand via `disclose_context`, not all
-   19 at once. For example, touching login code loads `auth-flow-review`;
-   touching a `Dockerfile` loads `container-image-scan`.
+   25 at once. For example, touching login code loads `auth-flow-review`;
+   touching a `Dockerfile` loads `container-image-scan`; touching Azure IaC
+   loads the matching `azure-*` playbooks, which also cover the **live
+   subscription**, not just the code — see `docs/AZURE-SETUP.md`.
 3. **Hard assets** (`.kiro/security-assets/`): deeper checklists, code
    snippets, and safe self-test strings, pulled in only when a loaded
    playbook points to them.
@@ -91,6 +94,8 @@ docs/FIXING-EXISTING-ISSUES.md how to fix secrets, dependencies and code after c
 scripts/iac-scan.sh            checkov wrapper for Terraform/K8s/docker-compose
 scripts/container-scan.sh      trivy wrapper for Dockerfiles/images
 scripts/headers-check.sh       checks HTTP security headers on a URL you own
+scripts/azure-audit.sh         read-only scan of your live Azure subscription (Prowler)
+docs/AZURE-SETUP.md            least-privilege Azure setup for scripts/azure-audit.sh
 .kiro/steering/security/       19 manifest+playbook docs for the pre-release agent
 .kiro/security-assets/         deeper checklists and safe self-test strings
 .kiro/agents/                  the Security Pre-Release Reviewer custom agent

@@ -1,5 +1,5 @@
 # Shortcuts. Run `make setup` once after cloning.
-.PHONY: setup check audit practice demo update-deps iac-scan container-scan headers-check
+.PHONY: setup check audit practice demo update-deps iac-scan container-scan headers-check azure-audit
 
 setup: ## Create .venv, install tools and turn on the git hooks
 	python3 -m venv .venv
@@ -33,3 +33,6 @@ container-scan: ## Scan a Dockerfile/image: make container-scan TARGET=Dockerfil
 
 headers-check: ## Check HTTP security headers on YOUR OWN site: make headers-check URL=https://your-site.example.com
 	bash scripts/headers-check.sh $(URL)
+
+azure-audit: ## Read-only scan of your Azure subscription: make azure-audit [SUBSCRIPTION=<id>] (see docs/AZURE-SETUP.md)
+	bash scripts/azure-audit.sh $(SUBSCRIPTION)
