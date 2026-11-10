@@ -1,12 +1,27 @@
 # security-starter
 
-A reusable starter that adds three automated security checks to any repo.
+A reusable starter that adds automated security checks to any repo.
 
 | Check | Tool | Runs |
 |---|---|---|
 | Secret scanning | gitleaks | pre-commit hook and CI |
 | Dependency vulnerabilities | Dependabot + pip-audit (or npm audit) | weekly PRs and CI |
-| Static analysis | Semgrep | CI |
+| Static analysis | Semgrep | CI, results also in the Security tab |
+| Demo still works | `demo-test` job | CI |
+
+## Quick start
+
+Needs Python 3.14 (see `.python-version`).
+
+```bash
+make setup     # creates .venv, installs tools, turns on the git hooks
+make check     # runs every scan locally
+make demo      # fake-key demo, see docs/DEMO.md
+```
+
+**Important:** the gitleaks hook only protects you after `pre-commit install`
+(which `make setup` does). A fresh clone has no hooks until you run it. CI is
+the backup, but it runs after the secret has already been pushed.
 
 ## Files
 
@@ -14,54 +29,53 @@ A reusable starter that adds three automated security checks to any repo.
 .pre-commit-config.yaml        local hooks (gitleaks + basic hygiene)
 .gitleaks.toml                 gitleaks config and allowlist
 .github/dependabot.yml         dependency + action update PRs
-.github/workflows/ci-cd.yml    CI: gitleaks, pip-audit, semgrep
+.github/workflows/security.yml CI: gitleaks, pip-audit, semgrep, demo-test
+templates/node/                JavaScript versions of the workflow and Dependabot config
+requirements.in                libraries you choose (edit this)
+requirements.txt               generated: every library pinned with hashes (do not hand-edit)
+Makefile                       setup / check / demo / update-deps
+SECURITY.md                    how to report a vulnerability
 docs/DEMO.md                   safe fake-key demo
 docs/READING-RESULTS.md        tool explanations, reading output, false positives
 docs/REEL-OUTLINE.md           5-step Instagram Reel outline
 scripts/demo-fake-secret.sh    runs the demo for you
-app.py, requirements.txt       tiny sample app so the scanners have input
+app.py                         tiny sample app so the scanners have input
 ```
 
-## Use it locally
+## Managing dependencies
 
-```bash
-python3 -m venv .venv && source .venv/bin/activate
-pip install pre-commit
-pre-commit install
-```
-
-## Publish it
-
-1. On github.com, create an empty repo named `security-starter` under your account (no README).
-2. In this folder:
-   ```bash
-   git add -A && git commit -m "Add security checks"
-   git remote add origin https://github.com/pinezy/security-starter.git
-   git push -u origin main
-   ```
-3. In the repo's Settings, turn on **Dependabot alerts** and **Dependabot security updates**
-   (Settings, then Code security). Optionally turn on branch protection and require the
-   three CI jobs to pass.
-4. Mark the repo as a **Template repository** (Settings, General) so new repos can start from it.
+Edit `requirements.in`, then run `make update-deps`. It rewrites
+`requirements.txt` with every sub-dependency pinned and hashed, so `pip-audit`
+checks the full tree and tampered packages are rejected on install.
 
 ## Reuse in another repo
 
-Copy these into the new repo, keeping the paths:
-`.pre-commit-config.yaml`, `.gitleaks.toml`, `.github/dependabot.yml`,
-`.github/workflows/ci-cd.yml`. Then:
+**Easiest:** click **Use this template** on the repo's GitHub page.
 
-- **Not Python?** In `dependabot.yml`, swap `pip` for `npm` (a commented block is there). In
-  `ci-cd.yml`, replace the `pip-audit` job steps with `setup-node` + `npm audit --audit-level=high`
-  (pin `setup-node` by SHA like the others).
-- Run `pre-commit install` in the new repo.
-- Run `pre-commit autoupdate` now and then. Dependabot keeps the pinned CI action SHAs fresh.
+**Python project, copy files:**
+`.pre-commit-config.yaml`, `.gitleaks.toml`, `.python-version`, `Makefile`,
+`.github/dependabot.yml`, `.github/workflows/security.yml`. Then `make setup`.
+
+**JavaScript project:** copy the same files, but use `templates/node/security.yml`
+as `.github/workflows/security.yml` and `templates/node/dependabot.yml` as
+`.github/dependabot.yml`. Delete `demo-test` references if you remove the demo script.
+Run `pre-commit install` yourself instead of `make setup`.
+
+Run `pre-commit autoupdate` now and then. Dependabot keeps the pinned CI action SHAs fresh.
+
+## Turn on in GitHub (once per repo)
+
+- Settings, Code security: Dependabot alerts, Dependabot security updates, secret scanning, push protection.
+- Settings, Branches: protect `main` and require the `gitleaks`, `pip-audit` and `semgrep` checks.
+- Settings, General: tick **Template repository** if you want to reuse it.
 
 ## Security choices in the workflow
 
 - Actions are pinned to full commit SHAs, with the version in a comment, so a moved tag can't change what runs.
-- Workflow-wide permissions are `contents: read`. Jobs ask for more only if needed.
+- Workflow-wide permissions are `contents: read`. Only the `semgrep` job adds `security-events: write`, to upload results.
 - `persist-credentials: false` on checkout, so later steps don't keep the token.
 - Tool versions (`pip-audit`, `semgrep`) are pinned.
+- Dependabot waits 7 days (`cooldown`) before proposing brand-new releases.
 - `gitleaks-action` is free for personal accounts. Organization repos need a free `GITLEAKS_LICENSE` secret.
 
 See `docs/DEMO.md` to try it out.

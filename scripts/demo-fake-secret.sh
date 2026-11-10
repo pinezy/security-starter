@@ -15,7 +15,7 @@ DEMO_BRANCH="test/fake-secret-demo"
 git checkout -b "$DEMO_BRANCH"
 
 # Build the fake key at run time so it is never stored in the repo.
-FAKE_KEY="ghp_$(LC_ALL=C tr -dc 'A-Za-z0-9' </dev/urandom | head -c 36)"
+FAKE_KEY="ghp_$(python3 -c "import secrets,string;print(''.join(secrets.choice(string.ascii_letters+string.digits) for _ in range(36)))")"
 printf '# FAKE DEMO KEY, not a real credential\nGITHUB_TOKEN = "%s"\n' "$FAKE_KEY" > config_demo.py
 
 git add config_demo.py

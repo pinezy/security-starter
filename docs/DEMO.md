@@ -7,11 +7,10 @@ branch, and you never push it.
 ## Before you start
 
 ```bash
-python3 -m venv .venv && source .venv/bin/activate
-pip install pre-commit
-pre-commit install          # turns the hooks on for this repo
-git add -A && git commit -m "Add security checks"   # you need one real commit first
+make setup                  # installs tools and turns the hooks on
+git status                  # must be clean: commit anything pending first
 ```
+The repo needs at least one real commit before the demo.
 
 ## Steps
 
@@ -23,7 +22,7 @@ git checkout -b test/fake-secret-demo
 **2. Create a file with a fake key.** Build the key yourself so it is never
 stored in the repo:
 ```bash
-echo "GITHUB_TOKEN = \"ghp_$(LC_ALL=C tr -dc 'A-Za-z0-9' </dev/urandom | head -c 36)\"" > config_demo.py
+python3 -c "import secrets,string;print('GITHUB_TOKEN = \"ghp_'+''.join(secrets.choice(string.ascii_letters+string.digits) for _ in range(36))+'\"')" > config_demo.py
 ```
 (Or run `bash scripts/demo-fake-secret.sh`, which does steps 1 to 3 for you.)
 

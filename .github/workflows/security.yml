@@ -1,0 +1,111 @@
+name: security-checks
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+# Least privilege: every job gets read-only access unless it asks for more.
+permissions:
+  contents: read
+
+# Cancel older runs of the same branch when you push again.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  # 1. Secret scanning
+  gitleaks:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+      pull-requests: read # lets the action look at PR commits
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0 # full history, so old commits are scanned too
+          persist-credentials: false
+      - uses: gitleaks/gitleaks-action@e0c47f4f8be36e29cdc102c57e68cb5cbf0e8d1e # v3.0.0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          # Only needed if this repo belongs to an Organization (free key from gitleaks.io):
+          # GITLEAKS_LICENSE: ${{ secrets.GITLEAKS_LICENSE }}
+
+  # 2. Dependency vulnerability check (Python)
+  # Node project? Use templates/node/security.yml instead of this file.
+  pip-audit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
+        with:
+          python-version-file: .python-version
+      - name: Audit requirements.txt (includes sub-dependencies, pinned by hash)
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install pip-audit==2.10.1
+          pip-audit -r requirements.txt
+
+  # 3. Static analysis. Results also appear in the repo's Security tab.
+  semgrep:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read
+      security-events: write # needed only to upload results to the Security tab
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
+        with:
+          python-version-file: .python-version
+      - name: Run Semgrep
+        run: |
+          python -m pip install semgrep==1.184.0
+          semgrep scan --config p/default --error --metrics=off \
+            --sarif --output semgrep.sarif
+      - name: Upload results to the Security tab
+        # Runs even when Semgrep found problems. Skipped for fork PRs, which
+        # are not allowed to write security events.
+        if: ${{ !cancelled() && hashFiles('semgrep.sarif') != '' && github.event.pull_request.head.repo.fork != true }}
+        uses: github/codeql-action/upload-sarif@33d7b85da1a04171e211befe2c739303b9a4c066 # v4.39.3
+        with:
+          sarif_file: semgrep.sarif
+          category: semgrep
+
+  # 4. Proves the fake-key demo still works: gitleaks must block the commit.
+  demo-test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
+        with:
+          python-version-file: .python-version
+      - name: Install hooks
+        run: |
+          python -m pip install pre-commit
+          pre-commit install
+      - name: Run demo and check gitleaks blocks it
+        env:
+          GIT_AUTHOR_NAME: ci
+          GIT_AUTHOR_EMAIL: ci@example.invalid
+          GIT_COMMITTER_NAME: ci
+          GIT_COMMITTER_EMAIL: ci@example.invalid
+        run: |
+          git checkout -b ci-demo-base # PR checkouts are detached; the script needs a branch
+          before=$(git rev-parse HEAD)
+          # Log goes outside the repo so the script's "clean working tree" check passes.
+          bash scripts/demo-fake-secret.sh 2>&1 | tee "$RUNNER_TEMP/demo.log"
+          grep -q "Commit blocked" "$RUNNER_TEMP/demo.log"
+          grep -q "Failed" "$RUNNER_TEMP/demo.log"
+          git checkout -q ci-demo-base
+          test "$(git rev-parse HEAD)" = "$before" # base branch is untouched

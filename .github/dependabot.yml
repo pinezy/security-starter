@@ -15,13 +15,7 @@ updates:
     cooldown:
       default-days: 7
 
-  # Uncomment for JavaScript/Node projects:
-  # - package-ecosystem: "npm"
-  #   directory: "/"
-  #   schedule:
-  #     interval: "weekly"
-  #   cooldown:
-  #     default-days: 7
+  # JavaScript/Node project? Use templates/node/dependabot.yml instead.
 
   # Keeps the pinned action SHAs in your workflows up to date
   - package-ecosystem: "github-actions"

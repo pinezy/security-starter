@@ -7,6 +7,9 @@ venv/
 # Node (in case you reuse this template for JS projects)
 node_modules/
 
+# Scan output
+semgrep.sarif
+
 # Local secrets: never commit these
 .env
 .env.*
