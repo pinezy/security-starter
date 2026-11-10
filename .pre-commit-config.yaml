@@ -1,0 +1,17 @@
+# Runs automatically on every `git commit` once you run: pre-commit install
+# Update pinned versions later with: pre-commit autoupdate
+repos:
+  # General hygiene
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v6.0.0
+    hooks:
+      - id: check-yaml
+      - id: end-of-file-fixer
+      - id: trailing-whitespace
+      - id: detect-private-key # catches pasted private key blocks
+
+  # 1. Secret scanning: blocks the commit if a secret is staged
+  - repo: https://github.com/gitleaks/gitleaks
+    rev: v8.30.1
+    hooks:
+      - id: gitleaks

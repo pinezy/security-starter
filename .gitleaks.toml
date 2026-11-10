@@ -1,0 +1,16 @@
+# Gitleaks config. Keeps gitleaks' built-in rules and adds an allowlist.
+# Use the allowlist ONLY for confirmed false positives, and say why.
+title = "security-starter gitleaks config"
+
+[extend]
+useDefault = true
+
+[allowlist]
+description = "Known-safe placeholders"
+regexes = [
+  # Example: placeholder values used in docs and .env.example
+  '''EXAMPLE_NOT_A_REAL_KEY''',
+]
+paths = [
+  '''\.env\.example$''',
+]
