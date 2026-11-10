@@ -1,0 +1,15 @@
+{
+  "version": "v1",
+  "hooks": [
+    {
+      "name": "IaC / container file save nudge",
+      "trigger": "PostFileSave",
+      "description": "Reminds the agent to check infrastructure-as-code or container files for misconfigurations right after they're saved.",
+      "matcher": "(Dockerfile|docker-compose.*\\.ya?ml|\\.tf$|k8s.*\\.ya?ml|kubernetes.*\\.ya?ml)",
+      "action": {
+        "type": "agent",
+        "prompt": "An infrastructure/container file was just saved. Load the relevant playbook (iac-misconfig-scan or container-image-scan from .kiro/steering/security/ via disclose_context) and offer to run the matching script (scripts/iac-scan.sh or scripts/container-scan.sh) on the changed file. Keep this brief, one or two sentences, not a full report unless the user asks for one."
+      }
+    }
+  ]
+}

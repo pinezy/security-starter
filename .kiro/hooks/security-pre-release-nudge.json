@@ -1,0 +1,15 @@
+{
+  "version": "v1",
+  "hooks": [
+    {
+      "name": "Pre-release security review nudge",
+      "trigger": "UserPromptSubmit",
+      "description": "Nudges the agent to run the relevant security playbooks and checks whenever the user signals they're about to commit, submit, or deploy.",
+      "matcher": "(?i)(ready to (commit|submit|deploy|ship)|about to (deploy|release|submit)|before (the )?(hackathon|demo|release|deadline)|final check|is this safe to (push|commit|submit|deploy))",
+      "action": {
+        "type": "agent",
+        "prompt": "The user signaled they are about to commit, submit, or deploy. Before helping with anything else, run a pre-release security pass: look at what changed (git diff / recently touched files), decide which security playbooks under .kiro/steering/security/ are relevant (use disclose_context to load each relevant one by name), run the matching scripts in scripts/ for anything that has one (gitleaks via audit-existing-repo.sh, pip-audit/npm audit, semgrep, iac-scan.sh, container-scan.sh, headers-check.sh), and report findings grouped by severity before proceeding. If nothing relevant changed, say so briefly and continue normally."
+      }
+    }
+  ]
+}
