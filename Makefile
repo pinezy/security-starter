@@ -1,5 +1,5 @@
 # Shortcuts. Run `make setup` once after cloning.
-.PHONY: setup check audit practice demo update-deps
+.PHONY: setup check audit practice demo update-deps iac-scan container-scan headers-check
 
 setup: ## Create .venv, install tools and turn on the git hooks
 	python3 -m venv .venv
@@ -24,3 +24,12 @@ demo: ## Run the fake-key demo (see docs/DEMO.md)
 
 update-deps: ## Re-pin requirements.txt (with hashes) from requirements.in
 	.venv/bin/pip-compile --generate-hashes --strip-extras --upgrade -o requirements.txt requirements.in
+
+iac-scan: ## Scan Terraform/K8s/docker-compose files: make iac-scan TARGET=/path (needs: pip install checkov)
+	bash scripts/iac-scan.sh $(or $(TARGET),.)
+
+container-scan: ## Scan a Dockerfile/image: make container-scan TARGET=Dockerfile (needs: brew install trivy)
+	bash scripts/container-scan.sh $(or $(TARGET),.)
+
+headers-check: ## Check HTTP security headers on YOUR OWN site: make headers-check URL=https://your-site.example.com
+	bash scripts/headers-check.sh $(URL)
