@@ -7,11 +7,10 @@ branch, and you never push it.
 ## Before you start
 
 ```bash
-python3 -m venv .venv && source .venv/bin/activate
-pip install pre-commit
-pre-commit install          # turns the hooks on for this repo
-git add -A && git commit -m "Add security checks"   # you need one real commit first
+make setup                  # installs tools and turns the hooks on
+git status                  # must be clean: commit anything pending first
 ```
+The repo needs at least one real commit before the demo.
 
 ## Steps
 
