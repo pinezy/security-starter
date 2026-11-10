@@ -4,6 +4,9 @@ on:
   push:
     branches: [main]
   pull_request:
+  workflow_dispatch: # "Run workflow" button in the Actions tab
+  schedule:
+    - cron: "17 6 * * 1" # Mondays 06:17 UTC: re-scan old code for newly published issues
 
 # Least privilege: every job gets read-only access unless it asks for more.
 permissions:

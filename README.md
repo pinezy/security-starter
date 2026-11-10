@@ -17,7 +17,17 @@ Needs Python 3.14 (see `.python-version`).
 make setup     # creates .venv, installs tools, turns on the git hooks
 make check     # runs every scan locally
 make demo      # fake-key demo, see docs/DEMO.md
+make audit TARGET=/path/to/repo   # read-only audit of an existing repo (needs: brew install gitleaks)
+make practice  # builds a practice repo with planted problems to find and fix
 ```
+
+## Already-committed code
+
+The hook only stops NEW secrets. For code that is already committed, use
+`make audit` to scan the whole git history, dependencies and code, then follow
+`docs/FIXING-EXISTING-ISSUES.md` to fix what it finds. CI also re-scans every
+Monday (and on demand from the Actions tab), so newly published vulnerabilities
+in old dependencies show up without you pushing anything.
 
 **Important:** the gitleaks hook only protects you after `pre-commit install`
 (which `make setup` does). A fresh clone has no hooks until you run it. CI is
@@ -39,6 +49,9 @@ docs/DEMO.md                   safe fake-key demo
 docs/READING-RESULTS.md        tool explanations, reading output, false positives
 docs/REEL-OUTLINE.md           5-step Instagram Reel outline
 scripts/demo-fake-secret.sh    runs the demo for you
+scripts/audit-existing-repo.sh read-only audit of any existing repo (history, deps, code)
+scripts/practice-sandbox.sh    builds a practice repo with planted problems
+docs/FIXING-EXISTING-ISSUES.md how to fix secrets, dependencies and code after commit
 app.py                         tiny sample app so the scanners have input
 ```
 

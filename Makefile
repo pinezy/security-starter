@@ -1,5 +1,5 @@
 # Shortcuts. Run `make setup` once after cloning.
-.PHONY: setup check demo update-deps
+.PHONY: setup check audit practice demo update-deps
 
 setup: ## Create .venv, install tools and turn on the git hooks
 	python3 -m venv .venv
@@ -12,6 +12,12 @@ check: ## Run every scan locally
 	.venv/bin/pre-commit run --all-files
 	.venv/bin/pip-audit -r requirements.txt
 	.venv/bin/semgrep scan --config p/default --error --metrics=off
+
+audit: ## Read-only audit of an existing repo: make audit TARGET=/path/to/repo
+	bash scripts/audit-existing-repo.sh $(or $(TARGET),.)
+
+practice: ## Build a practice repo with planted problems (see docs/FIXING-EXISTING-ISSUES.md)
+	bash scripts/practice-sandbox.sh
 
 demo: ## Run the fake-key demo (see docs/DEMO.md)
 	bash scripts/demo-fake-secret.sh
